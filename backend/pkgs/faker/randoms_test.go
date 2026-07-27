@@ -2,12 +2,14 @@ package faker
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
-const Loops = 500
+const loops = 500
 
-func ValidateUnique(values []string) bool {
-	for i := 0; i < len(values); i++ {
+func validateUnique(values []string) bool {
+	for i := range values {
 		for j := i + 1; j < len(values); j++ {
 			if values[i] == values[j] {
 				return false
@@ -20,15 +22,16 @@ func ValidateUnique(values []string) bool {
 func Test_GetRandomString(t *testing.T) {
 	t.Parallel()
 	// Test that the function returns a string of the correct length
-	generated := make([]string, Loops)
+	generated := make([]string, loops)
 
 	faker := NewFaker()
 
-	for i := 0; i < Loops; i++ {
+	for i := range loops {
 		generated[i] = faker.Str(10)
+		assert.Len(t, generated[i], 10)
 	}
 
-	if !ValidateUnique(generated) {
+	if !validateUnique(generated) {
 		t.Error("Generated values are not unique")
 	}
 }
@@ -36,15 +39,15 @@ func Test_GetRandomString(t *testing.T) {
 func Test_GetRandomEmail(t *testing.T) {
 	t.Parallel()
 	// Test that the function returns a string of the correct length
-	generated := make([]string, Loops)
+	generated := make([]string, loops)
 
 	faker := NewFaker()
 
-	for i := 0; i < Loops; i++ {
+	for i := range loops {
 		generated[i] = faker.Email()
 	}
 
-	if !ValidateUnique(generated) {
+	if !validateUnique(generated) {
 		t.Error("Generated values are not unique")
 	}
 }
@@ -57,7 +60,7 @@ func Test_GetRandomBool(t *testing.T) {
 
 	faker := NewFaker()
 
-	for i := 0; i < Loops; i++ {
+	for range loops {
 		if faker.Bool() {
 			trues++
 		} else {
@@ -78,17 +81,16 @@ func Test_RandomNumber(t *testing.T) {
 	const MIN = 0
 	const MAX = 100
 
-	last := MIN - 1
+	seen := make(map[int]struct{}, MAX-MIN)
 
-	for i := 0; i < Loops; i++ {
+	for range loops {
 		n := f.Num(MIN, MAX)
 
-		if n == last {
-			t.Errorf("RandomNumber() failed to generate unique number")
-		}
+		assert.GreaterOrEqual(t, n, MIN)
+		assert.Less(t, n, MAX)
 
-		if n < MIN || n > MAX {
-			t.Errorf("RandomNumber() failed to generate a number between %v and %v", MIN, MAX)
-		}
+		seen[n] = struct{}{}
 	}
+
+	assert.Greater(t, len(seen), 1, "Num returned a constant value across %d draws", loops)
 }
