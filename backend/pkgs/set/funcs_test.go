@@ -1,8 +1,9 @@
 package set
 
 import (
-	"reflect"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 type args struct {
@@ -10,22 +11,27 @@ type args struct {
 	b Set[string]
 }
 
-var (
-	argsBasic = args{
+// Fresh fixtures prevent mutations from leaking through shared `Set` maps.
+func argsBasic() args {
+	return args{
 		a: New("a", "b", "c"),
 		b: New("b", "c", "d"),
 	}
+}
 
-	argsNoOverlap = args{
+func argsNoOverlap() args {
+	return args{
 		a: New("a", "b", "c"),
 		b: New("d", "e", "f"),
 	}
+}
 
-	argsIdentical = args{
+func argsIdentical() args {
+	return args{
 		a: New("a", "b", "c"),
 		b: New("a", "b", "c"),
 	}
-)
+}
 
 func TestDiff(t *testing.T) {
 	tests := []struct {
@@ -35,25 +41,23 @@ func TestDiff(t *testing.T) {
 	}{
 		{
 			name: "diff basic",
-			args: argsBasic,
+			args: argsBasic(),
 			want: New("a"),
 		},
 		{
 			name: "diff empty",
-			args: argsIdentical,
+			args: argsIdentical(),
 			want: New[string](),
 		},
 		{
 			name: "diff no overlap",
-			args: argsNoOverlap,
+			args: argsNoOverlap(),
 			want: New("a", "b", "c"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := Diff(tt.args.a, tt.args.b); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Diff() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, Diff(tt.args.a, tt.args.b))
 		})
 	}
 }
@@ -66,25 +70,23 @@ func TestIntersect(t *testing.T) {
 	}{
 		{
 			name: "intersect basic",
-			args: argsBasic,
+			args: argsBasic(),
 			want: New("b", "c"),
 		},
 		{
 			name: "identical sets",
-			args: argsIdentical,
+			args: argsIdentical(),
 			want: New("a", "b", "c"),
 		},
 		{
 			name: "no overlap",
-			args: argsNoOverlap,
+			args: argsNoOverlap(),
 			want: New[string](),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := Intersect(tt.args.a, tt.args.b); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Intersect() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, Intersect(tt.args.a, tt.args.b))
 		})
 	}
 }
@@ -97,25 +99,23 @@ func TestUnion(t *testing.T) {
 	}{
 		{
 			name: "intersect basic",
-			args: argsBasic,
+			args: argsBasic(),
 			want: New("a", "b", "c", "d"),
 		},
 		{
 			name: "identical sets",
-			args: argsIdentical,
+			args: argsIdentical(),
 			want: New("a", "b", "c"),
 		},
 		{
 			name: "no overlap",
-			args: argsNoOverlap,
+			args: argsNoOverlap(),
 			want: New("a", "b", "c", "d", "e", "f"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := Union(tt.args.a, tt.args.b); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Union() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, Union(tt.args.a, tt.args.b))
 		})
 	}
 }
@@ -128,25 +128,23 @@ func TestXor(t *testing.T) {
 	}{
 		{
 			name: "xor basic",
-			args: argsBasic,
+			args: argsBasic(),
 			want: New("a", "d"),
 		},
 		{
 			name: "identical sets",
-			args: argsIdentical,
+			args: argsIdentical(),
 			want: New[string](),
 		},
 		{
 			name: "no overlap",
-			args: argsNoOverlap,
+			args: argsNoOverlap(),
 			want: New("a", "b", "c", "d", "e", "f"),
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := Xor(tt.args.a, tt.args.b); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Xor() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, Xor(tt.args.a, tt.args.b))
 		})
 	}
 }
@@ -159,20 +157,18 @@ func TestEqual(t *testing.T) {
 	}{
 		{
 			name: "equal basic",
-			args: argsBasic,
+			args: argsBasic(),
 			want: false,
 		},
 		{
 			name: "identical sets",
-			args: argsIdentical,
+			args: argsIdentical(),
 			want: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := Equal(tt.args.a, tt.args.b); got != tt.want {
-				t.Errorf("Equal() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, Equal(tt.args.a, tt.args.b))
 		})
 	}
 }
@@ -203,12 +199,26 @@ func TestSubset(t *testing.T) {
 			},
 			want: false,
 		},
+		{
+			name: "equal non-empty sets are subsets of each other",
+			args: args{
+				a: New("a", "b", "c"),
+				b: New("a", "b", "c"),
+			},
+			want: true,
+		},
+		{
+			name: "equal empty sets are subsets of each other",
+			args: args{
+				a: New[string](),
+				b: New[string](),
+			},
+			want: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := Subset(tt.args.a, tt.args.b); got != tt.want {
-				t.Errorf("Subset() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, Subset(tt.args.a, tt.args.b))
 		})
 	}
 }
@@ -239,12 +249,26 @@ func TestSuperset(t *testing.T) {
 			},
 			want: false,
 		},
+		{
+			name: "equal non-empty sets are supersets of each other",
+			args: args{
+				a: New("a", "b", "c"),
+				b: New("a", "b", "c"),
+			},
+			want: true,
+		},
+		{
+			name: "equal empty sets are supersets of each other",
+			args: args{
+				a: New[string](),
+				b: New[string](),
+			},
+			want: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := Superset(tt.args.a, tt.args.b); got != tt.want {
-				t.Errorf("Superset() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, Superset(tt.args.a, tt.args.b))
 		})
 	}
 }
@@ -278,9 +302,7 @@ func TestDisjoint(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := Disjoint(tt.args.a, tt.args.b); got != tt.want {
-				t.Errorf("Disjoint() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, Disjoint(tt.args.a, tt.args.b))
 		})
 	}
 }

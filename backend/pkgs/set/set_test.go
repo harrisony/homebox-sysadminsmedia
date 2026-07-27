@@ -1,9 +1,10 @@
 package set
 
 import (
-	"reflect"
 	"sort"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestNew(t *testing.T) {
@@ -40,9 +41,7 @@ func TestNew(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := New(tt.args.v...); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("New() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, New(tt.args.v...))
 		})
 	}
 }
@@ -100,9 +99,7 @@ func TestSet_Insert(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.s.Insert(tt.args.v...)
-			if !reflect.DeepEqual(tt.s, tt.want) {
-				t.Errorf("Set.Insert() = %v, want %v", tt.s, tt.want)
-			}
+			assert.Equal(t, tt.want, tt.s)
 		})
 	}
 }
@@ -118,7 +115,7 @@ func TestSet_Delete(t *testing.T) {
 		want Set[string]
 	}{
 		{
-			name: "insert",
+			name: "delete",
 			s: Set[string]{
 				mp: map[string]struct{}{
 					"a": {},
@@ -156,9 +153,7 @@ func TestSet_Delete(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			tt.s.Remove(tt.args.v...)
-			if !reflect.DeepEqual(tt.s, tt.want) {
-				t.Errorf("Set.Delete() = %v, want %v", tt.s, tt.want)
-			}
+			assert.Equal(t, tt.want, tt.s)
 		})
 	}
 }
@@ -214,9 +209,7 @@ func TestSet_ContainsAll(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.s.ContainsAll(tt.args.v...); got != tt.want {
-				t.Errorf("Set.ContainsAll() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, tt.s.ContainsAll(tt.args.v...))
 		})
 	}
 }
@@ -252,9 +245,7 @@ func TestSet_Slice(t *testing.T) {
 
 			sort.Strings(got)
 
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Set.Slice() = %v, want %v", got, tt.want)
-			}
+			assert.Equal(t, tt.want, got)
 		})
 	}
 }
