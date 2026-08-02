@@ -124,7 +124,7 @@ type LabelMakerConf struct {
 type OIDCConf struct {
 	IssuerURL          string        `yaml:"issuer_url"`
 	ClientID           string        `yaml:"client_id"`
-	ClientSecret       string        `yaml:"client_secret"`
+	ClientSecret       string        `yaml:"client_secret"        conf:"mask"`
 	Scope              string        `yaml:"scope"                conf:"default:openid profile email"`
 	AllowedGroups      string        `yaml:"allowed_groups"`
 	GroupClaim         string        `yaml:"group_claim"          conf:"default:groups"`
@@ -149,7 +149,7 @@ func (c OIDCConf) MarshalJSON() ([]byte, error) {
 }
 
 type BarcodeAPIConf struct {
-	TokenBarcodespider   string `yaml:"token_barcodespider"`
+	TokenBarcodespider   string `yaml:"token_barcodespider"   conf:"mask"`
 	OpenFoodFactsContact string `yaml:"openfoodfacts_contact"`
 }
 

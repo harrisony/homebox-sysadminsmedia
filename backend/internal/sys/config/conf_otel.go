@@ -18,7 +18,7 @@ type OTelConfig struct {
 	// Protocol specifies the OTLP protocol: "grpc" or "http"
 	Protocol string `yaml:"protocol" conf:"default:grpc"`
 	// Headers are additional headers to send with OTLP requests (comma-separated key=value pairs)
-	Headers string `yaml:"headers"`
+	Headers string `yaml:"headers" conf:"mask"`
 	// MetricsInterval is the interval at which metrics are exported (e.g., "15s", "1m")
 	MetricsInterval string `yaml:"metrics_interval" conf:"default:15s"`
 	// SampleRate is the sampling rate for traces (0.0 to 1.0, where 1.0 means all traces)

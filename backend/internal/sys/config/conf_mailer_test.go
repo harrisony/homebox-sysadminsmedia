@@ -7,6 +7,8 @@ import (
 )
 
 func Test_MailerReady_Success(t *testing.T) {
+	t.Parallel()
+
 	mc := &MailerConf{
 		Host:     "host",
 		Port:     1,
@@ -19,6 +21,8 @@ func Test_MailerReady_Success(t *testing.T) {
 }
 
 func Test_MailerReady_Failure(t *testing.T) {
+	t.Parallel()
+
 	mc := &MailerConf{}
 	assert.False(t, mc.Ready())
 

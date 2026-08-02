@@ -6,7 +6,7 @@ type MailerConf struct {
 	Host     string `conf:""`
 	Port     int    `conf:""`
 	Username string `conf:""`
-	Password string `conf:""`
+	Password string `conf:"mask"`
 	From     string `conf:""`
 }
 
