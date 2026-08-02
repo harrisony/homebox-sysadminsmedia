@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"crypto/md5"
+	"errors"
 	"fmt"
 	"image"
 	"io"
@@ -331,9 +332,9 @@ func (r *AttachmentRepo) Create(ctx context.Context, itemID uuid.UUID, doc ItemC
 			Exec(ctx)
 		if err != nil {
 			log.Err(err).Msg("failed to remove primary from other attachments")
-			err := tx.Rollback()
-			if err != nil {
-				return nil, err
+
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				return nil, errors.Join(err, rollbackErr)
 			}
 			return nil, err
 		}
@@ -348,9 +349,9 @@ func (r *AttachmentRepo) Create(ctx context.Context, itemID uuid.UUID, doc ItemC
 			Count(ctx)
 		if err != nil {
 			log.Err(err).Msg("failed to count attachments")
-			err := tx.Rollback()
-			if err != nil {
-				return nil, err
+
+			if rollbackErr := tx.Rollback(); rollbackErr != nil {
+				return nil, errors.Join(err, rollbackErr)
 			}
 			return nil, err
 		}
@@ -364,9 +365,9 @@ func (r *AttachmentRepo) Create(ctx context.Context, itemID uuid.UUID, doc ItemC
 	itemGroup, err := tx.Entity.Query().QueryGroup().Where(group.HasEntitiesWith(entity.ID(itemID))).First(ctx)
 	if err != nil {
 		log.Err(err).Msg("failed to get item group")
-		err := tx.Rollback()
-		if err != nil {
-			return nil, err
+
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return nil, errors.Join(err, rollbackErr)
 		}
 		return nil, err
 	}
@@ -375,7 +376,7 @@ func (r *AttachmentRepo) Create(ctx context.Context, itemID uuid.UUID, doc ItemC
 	uploadResult, err := r.UploadFile(ctx, itemGroup, doc)
 	if err != nil {
 		if rollbackErr := tx.Rollback(); rollbackErr != nil {
-			return nil, rollbackErr
+			return nil, errors.Join(err, rollbackErr)
 		}
 		return nil, err
 	}
@@ -386,9 +387,9 @@ func (r *AttachmentRepo) Create(ctx context.Context, itemID uuid.UUID, doc ItemC
 	attachmentDb, err := bldr.Save(ctx)
 	if err != nil {
 		log.Err(err).Msg("failed to save attachment to database")
-		err = tx.Rollback()
-		if err != nil {
-			return nil, err
+
+		if rollbackErr := tx.Rollback(); rollbackErr != nil {
+			return nil, errors.Join(err, rollbackErr)
 		}
 		return nil, err
 	}
