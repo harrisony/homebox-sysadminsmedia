@@ -4,8 +4,10 @@ package eventbus
 import (
 	"context"
 	"sync"
+	"sync/atomic"
 
 	"github.com/google/uuid"
+	"github.com/rs/zerolog/log"
 )
 
 type Event string
@@ -28,7 +30,7 @@ type eventData struct {
 }
 
 type EventBus struct {
-	started bool
+	started atomic.Bool
 	ch      chan eventData
 
 	mu          sync.RWMutex
@@ -49,11 +51,9 @@ func New() *EventBus {
 }
 
 func (e *EventBus) Run(ctx context.Context) error {
-	if e.started {
+	if !e.started.CompareAndSwap(false, true) {
 		panic("event bus already started")
 	}
-
-	e.started = true
 
 	for {
 		select {
@@ -69,10 +69,20 @@ func (e *EventBus) Run(ctx context.Context) error {
 			}
 
 			for _, fn := range arr {
-				fn(event.data)
+				runSubscriber(fn, event.data)
 			}
 		}
 	}
+}
+
+func runSubscriber(fn func(any), data any) {
+	defer func() {
+		if recovered := recover(); recovered != nil {
+			log.Error().Interface("panic", recovered).Msg("event bus subscriber panicked")
+		}
+	}()
+
+	fn(data)
 }
 
 func (e *EventBus) Publish(event Event, data any) {
