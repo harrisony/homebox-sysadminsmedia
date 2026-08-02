@@ -41,7 +41,7 @@ func rotate90(img image.Image) image.Image {
 	dst := image.NewRGBA(image.Rect(0, 0, b.Dy(), b.Dx()))
 	for y := b.Min.Y; y < b.Max.Y; y++ {
 		for x := b.Min.X; x < b.Max.X; x++ {
-			dst.Set(b.Max.Y-1-y, x, img.At(x, y))
+			dst.Set(b.Max.Y-1-y, x-b.Min.X, img.At(x, y))
 		}
 	}
 	return dst
@@ -73,11 +73,11 @@ func ApplyOrientation(img image.Image, orientation uint16) image.Image {
 	case 4:
 		return flipVertical(img)
 	case 5:
-		return rotate90(flipHorizontal(img))
+		return rotate270(flipHorizontal(img))
 	case 6:
 		return rotate90(img)
 	case 7:
-		return rotate270(flipHorizontal(img))
+		return rotate90(flipHorizontal(img))
 	case 8:
 		return rotate270(img)
 	default:
