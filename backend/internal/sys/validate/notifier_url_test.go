@@ -4,6 +4,8 @@ import (
 	"net"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"github.com/sysadminsmedia/homebox/backend/internal/sys/config"
 )
 
@@ -18,6 +20,8 @@ const (
 var dns64DefaultNets = []string{"64:ff9b::/96", "64:ff9b:1::/48"}
 
 func TestValidateNotifierURL(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name        string
 		url         string
@@ -415,22 +419,41 @@ func TestValidateNotifierURL(t *testing.T) {
 			config:      config.NotifierConf{BlockCloudMetadata: true},
 			expectError: false,
 		},
+		{
+			name:        "uppercase generic+http scheme to loopback is blocked",
+			url:         "GENERIC+HTTP://127.0.0.1:8080/webhook",
+			config:      config.NotifierConf{BlockLocalhost: true},
+			expectError: true,
+		},
+		{
+			name:        "mixed-case Generic+Https scheme to cloud metadata is blocked",
+			url:         "Generic+Https://169.254.169.254/latest/meta-data",
+			config:      config.NotifierConf{BlockCloudMetadata: true},
+			expectError: true,
+		},
+		{
+			name:        "uppercase generic shorthand scheme to private net is blocked",
+			url:         "GENERIC://http://192.168.1.1/webhook",
+			config:      config.NotifierConf{BlockLocalNets: true},
+			expectError: true,
+		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := ValidateNotifierURL(tt.url, &tt.config)
-			if tt.expectError && err == nil {
-				t.Errorf("expected error but got none")
-			}
-			if !tt.expectError && err != nil {
-				t.Errorf("expected no error but got: %v", err)
+			if tt.expectError {
+				require.Error(t, err, "expected error but got none")
+			} else {
+				require.NoError(t, err, "expected no error")
 			}
 		})
 	}
 }
 
 func TestIsGenericNotifier(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name     string
 		url      string
@@ -446,15 +469,14 @@ func TestIsGenericNotifier(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			result := isGenericNotifier(tt.url)
-			if result != tt.expected {
-				t.Errorf("expected %v but got %v", tt.expected, result)
-			}
+			assert.Equal(t, tt.expected, isGenericNotifier(tt.url))
 		})
 	}
 }
 
 func TestExtractGenericURL(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name        string
 		url         string
@@ -496,20 +518,20 @@ func TestExtractGenericURL(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			result, err := extractGenericURL(tt.url)
-			if tt.expectError && err == nil {
-				t.Errorf("expected error but got none")
+			if tt.expectError {
+				require.Error(t, err, "expected error but got none")
+			} else {
+				require.NoError(t, err, "expected no error")
 			}
-			if !tt.expectError && err != nil {
-				t.Errorf("expected no error but got: %v", err)
-			}
-			if result != tt.expected {
-				t.Errorf("expected %v but got %v", tt.expected, result)
-			}
+
+			assert.Equal(t, tt.expected, result)
 		})
 	}
 }
 
 func TestEmbeddedIPv4(t *testing.T) {
+	t.Parallel()
+
 	// Layout examples are taken from RFC 6052 section 2.4, all embedding 192.0.2.33.
 	const rfc6052Embedded = "192.0.2.33"
 	tests := []struct {
@@ -534,19 +556,19 @@ func TestEmbeddedIPv4(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			result := embeddedIPv4(net.ParseIP(tt.ip), tt.prefixLen)
 			if tt.expected == "" {
-				if result != nil {
-					t.Errorf("expected no extraction but got %v", result)
-				}
+				assert.Nil(t, result, "expected no extraction")
 				return
 			}
-			if result == nil || result.String() != tt.expected {
-				t.Errorf("expected %v but got %v", tt.expected, result)
-			}
+
+			require.NotNil(t, result, "expected %v but got no extraction", tt.expected)
+			assert.Equal(t, tt.expected, result.String())
 		})
 	}
 }
 
 func TestValidateNotifierURL_InvalidCIDR_AllowNets(t *testing.T) {
+	t.Parallel()
+
 	// Test with invalid CIDR in AllowNets - should skip invalid and check valid ones
 	tests := []struct {
 		name        string
@@ -598,17 +620,18 @@ func TestValidateNotifierURL_InvalidCIDR_AllowNets(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := ValidateNotifierURL(tt.url, &tt.config)
-			if tt.expectError && err == nil {
-				t.Errorf("%s: expected error but got none", tt.description)
-			}
-			if !tt.expectError && err != nil {
-				t.Errorf("%s: expected no error but got: %v", tt.description, err)
+			if tt.expectError {
+				require.Error(t, err, tt.description)
+			} else {
+				require.NoError(t, err, tt.description)
 			}
 		})
 	}
 }
 
 func TestValidateNotifierURL_InvalidCIDR_BlockNets(t *testing.T) {
+	t.Parallel()
+
 	// Test with invalid CIDR in BlockNets - should skip invalid and check valid ones
 	tests := []struct {
 		name        string
@@ -660,11 +683,10 @@ func TestValidateNotifierURL_InvalidCIDR_BlockNets(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := ValidateNotifierURL(tt.url, &tt.config)
-			if tt.expectError && err == nil {
-				t.Errorf("%s: expected error but got none", tt.description)
-			}
-			if !tt.expectError && err != nil {
-				t.Errorf("%s: expected no error but got: %v", tt.description, err)
+			if tt.expectError {
+				require.Error(t, err, tt.description)
+			} else {
+				require.NoError(t, err, tt.description)
 			}
 		})
 	}
