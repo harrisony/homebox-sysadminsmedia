@@ -13,6 +13,10 @@ import (
 // ValidateNotifierURL validates a notifier URL against the configured block/allow lists.
 // This only applies to generic:// notifier URLs which can make arbitrary HTTP requests.
 func ValidateNotifierURL(notifierURL string, cfg *config.NotifierConf) error {
+	// Shoutrrr dispatches service schemes case-insensitively. Normalize the
+	// scheme before checking generic notifiers so mixed case cannot bypass SSRF policy.
+	notifierURL = normalizeNotifierScheme(notifierURL)
+
 	// Only validate generic notifiers
 	if !isGenericNotifier(notifierURL) {
 		return nil
@@ -168,6 +172,17 @@ func checkBlockedCategories(ips []net.IP, cfg *config.NotifierConf) error {
 	}
 
 	return nil
+}
+
+// normalizeNotifierScheme lowercases the substring before the first `://`.
+// It preserves the host, path, and query bytes.
+func normalizeNotifierScheme(notifierURL string) string {
+	i := strings.Index(notifierURL, "://")
+	if i < 0 {
+		return notifierURL
+	}
+
+	return strings.ToLower(notifierURL[:i]) + notifierURL[i:]
 }
 
 // isGenericNotifier checks if the URL is a generic notifier that needs validation
