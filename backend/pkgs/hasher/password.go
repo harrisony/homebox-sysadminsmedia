@@ -52,6 +52,11 @@ func init() { // nolint: gochecknoinits
 	}
 }
 
+// Enabled reports whether password hashing is active. It is false when
+// `UNSAFE_DISABLE_PASSWORD_PROJECTION` equals `yes_i_am_sure` at process start.
+// Disabled mode stores and compares plaintext passwords.
+func Enabled() bool { return enabled }
+
 func hasherTracer() trace.Tracer {
 	return otel.Tracer("hasher")
 }

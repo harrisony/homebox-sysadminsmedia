@@ -2,18 +2,22 @@ package hasher
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestHashPassword(t *testing.T) {
 	t.Parallel()
+	requirePasswordProtection(t)
+
 	type args struct {
 		password      string
 		invalidInputs []string
 	}
 	tests := []struct {
-		name    string
-		args    args
-		wantErr bool
+		name string
+		args args
 	}{
 		{
 			name: "letters_and_numbers",
@@ -47,20 +51,15 @@ func TestHashPassword(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, err := HashPassword(tt.args.password)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("HashPassword() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			check, _ := CheckPasswordHash(tt.args.password, got)
-			if !check {
-				t.Errorf("CheckPasswordHash() failed to validate password=%v against hash=%v", tt.args.password, got)
-			}
+			require.NoError(t, err)
+
+			check, needsRehash := CheckPasswordHash(tt.args.password, got)
+			assert.True(t, check, "failed to validate password=%v against hash=%v", tt.args.password, got)
+			assert.False(t, needsRehash, "a freshly minted hash asked to be rehashed")
 
 			for _, invalid := range tt.args.invalidInputs {
 				check, _ := CheckPasswordHash(invalid, got)
-				if check {
-					t.Errorf("CheckPasswordHash() improperly validated password=%v against hash=%v", invalid, got)
-				}
+				assert.False(t, check, "improperly validated password=%v against hash=%v", invalid, got)
 			}
 		})
 	}
