@@ -54,6 +54,7 @@ require (
 	go.opentelemetry.io/otel/sdk/metric v1.44.0
 	go.opentelemetry.io/otel/trace v1.44.0
 	go.opentelemetry.io/proto/otlp v1.10.0
+	go.uber.org/goleak v1.3.0
 	gocloud.dev v0.45.0
 	gocloud.dev/pubsub/kafkapubsub v0.45.0
 	gocloud.dev/pubsub/natspubsub v0.45.0
