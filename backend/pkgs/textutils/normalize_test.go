@@ -3,6 +3,8 @@ package textutils
 import (
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestRemoveAccents(t *testing.T) {
@@ -77,6 +79,11 @@ func TestRemoveAccents(t *testing.T) {
 			expected: "e",
 		},
 		{
+			name:     "Invalid UTF-8 byte with accent",
+			input:    "caf\u00e9\xff",
+			expected: "cafe\ufffd",
+		},
+		{
 			name:     "Very long string with accents",
 			input:    strings.Repeat("café", 1000),
 			expected: strings.Repeat("cafe", 1000),
@@ -105,10 +112,7 @@ func TestRemoveAccents(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := RemoveAccents(tc.input)
-			if result != tc.expected {
-				t.Errorf("RemoveAccents(%q) = %q, expected %q", tc.input, result, tc.expected)
-			}
+			assert.Equal(t, tc.expected, RemoveAccents(tc.input), "input %q", tc.input)
 		})
 	}
 }
@@ -139,14 +143,36 @@ func TestNormalizeSearchQuery(t *testing.T) {
 			input:    "Hello World",
 			expected: "hello world",
 		},
+		{
+			name:     "Uppercase French grave",
+			input:    "PÈRE",
+			expected: "pere",
+		},
+		{
+			name:     "Uppercase French cedilla",
+			input:    "FRANÇAIS",
+			expected: "francais",
+		},
+		{
+			name:     "Uppercase French acute",
+			input:    "ÉTÉ",
+			expected: "ete",
+		},
+		{
+			name:     "Uppercase French circumflex",
+			input:    "HÔTEL",
+			expected: "hotel",
+		},
+		{
+			name:     "Uppercase French diaeresis",
+			input:    "NAÏVE",
+			expected: "naive",
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := NormalizeSearchQuery(tc.input)
-			if result != tc.expected {
-				t.Errorf("NormalizeSearchQuery(%q) = %q, expected %q", tc.input, result, tc.expected)
-			}
+			assert.Equal(t, tc.expected, NormalizeSearchQuery(tc.input), "input %q", tc.input)
 		})
 	}
 }

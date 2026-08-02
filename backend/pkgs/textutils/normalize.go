@@ -23,11 +23,10 @@ func RemoveAccents(text string) string {
 	// 3. Normalizes back to NFC (canonical composition)
 	t := transform.Chain(norm.NFD, runes.Remove(runes.In(unicode.Mn)), norm.NFC)
 
-	result, _, err := transform.String(t, text)
-	if err != nil {
-		// If transformation fails, return the original text
-		return text
-	}
+	// Invalid UTF-8 must be replaced before `transform.String`, which rejects it.
+	text = strings.ToValidUTF8(text, "�")
+
+	result, _, _ := transform.String(t, text)
 
 	return result
 }
